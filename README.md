@@ -1,4 +1,4 @@
 Go nogo
 =======
 
-A go/nogo experiment with moa and pybarst.
+A conditioning experiment with moa and pybarst.

@@ -1,17 +1,17 @@
 from setuptools import setup, find_packages
-import forced_choice
+import sock_cond
 
 
 setup(
-    name='Forced Choice',
-    version=forced_choice.__version__,
+    name='Shock Conditioning',
+    version=sock_cond.__version__,
     packages=find_packages(),
     install_requires=['moa', 'pybarst', 'moadevs', 'ffpyplayer', 'cplcom'],
     author='Matthew Einhorn',
     author_email='moiein2000@gmail.com',
     url='https://cpl.cornell.edu/',
     license='MIT',
-    description='Forced choice experiment.',
+    description='SiWei Conditioning experiment.',
     entry_points={'console_scripts':
-                  ['forced_choice=forced_choice.main:run_app']},
+                  ['sock_cond=sock_cond.main:run_app']},
     )

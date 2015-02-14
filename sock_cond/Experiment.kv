@@ -1,0 +1,61 @@
+#:kivy 1.9.0
+#@PydevCodeAnalysisIgnore
+#:import moas moa.base.named_moas
+#:import clock time.clock
+
+
+<RootStage>:
+    name: 'Root_stage'
+    InitBarstStage:
+        id: barst
+        name: 'barst'
+    VerifyConfigStage:
+        id: verify
+        name: 'verify'
+        animal_id: app.next_animal_btn.animal_id
+    MoaStage:
+        order: 'parallel'
+        RandValves:
+            name: 'rand_valves'
+            repeat: -1
+        MoaStage:
+            name: 'animal_stage'
+            repeat: -1
+            id: animal_stage
+            DigitalGateStage:
+                name: 'animal_wait'
+                device: barst.next_animal_dev
+                exit_state: True
+                on_finished: if self.finished and not self.stopped: barst.create_writers(verify.video_filename, verify.num_trials)
+            Delay:
+                name: 'prehab'
+                delay: verify.prehab
+                on_started: if self.started: verify.start_trials()
+            MoaStage:
+                name: 'trial'
+                id: trial
+                repeat: verify.num_trials
+                Delay:
+                    delay: verify.pre_record
+                    on_started: if self.started: barst.set_trial_writers(trial.count)
+                    on_started: if self.started: verify.trial_log['trial'] = trial.count
+                    on_started: if self.started: verify.trial_log['ts'] = clock()
+                Delay:
+                    on_started: if self.started: verify.set_odor(True)
+                    delay: verify.trial_duration - verify.shock_duration
+                Delay:
+                    on_started: if self.started: verify.set_shock(True)
+                    delay: verify.shock_duration
+                    on_finished: if self.finished: verify.set_shock(False)
+                    on_finished: if self.finished: verify.set_odor(False)
+                Delay:
+                    delay: verify.post_record
+                    on_finished: if self.finished: barst.reset_trial_writers()
+                Delay:
+                    delay_type: 'random'
+                    min: verify.iti_min
+                    max: verify.iti_max
+                    on_finished: if self.finished: verify.post_trial()
+            Delay:
+                name: 'posthab'
+                delay: verify.posthab

@@ -1,7 +1,5 @@
-0, NO, 
-1, why not, r
-4, that one, -
-5, boxes, r
-10, apples, lr
-8, the other one, rl
-7, mix,
+0, NO
+1, +limonene
+2, rand1
+3, rand2
+4, rand3
