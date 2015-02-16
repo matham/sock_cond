@@ -174,11 +174,9 @@ class InitBarstStage(MoaStage, ScheduledEventLoop):
         '''Creates simulated versions of the barst devices.
         '''
         if sim:
-            rtvcls = RTVChanSim
             pincls = FTDIPortSim
             odorcls = FTDIOdorsSim
         else:
-            rtvcls = RTVChan
             pincls = FTDIPort
             odorcls = FTDIOdors
         app = App.get_running_app()
@@ -213,9 +211,15 @@ class InitBarstStage(MoaStage, ScheduledEventLoop):
             cam_btns.add_widget(dev_cls[i % 2](text=names[i]))
         for i, p in enumerate(self.ports):
             port = 'player{}'.format(p)
-            player = rtvcls(
-                button=cam_btns.children[N - 1 - i].__self__, name=port, idx=i,
-                callback=partial(self.service_input_image, i))
+            if sim:
+                player = RTVChanSim(
+                    button=cam_btns.children[N - 1 - i].__self__, name=port,
+                    idx=i, callback=partial(self.service_input_image, i))
+            else:
+                player = RTVChan(
+                    button=cam_btns.children[N - 1 - i].__self__, name=port,
+                    idx=i, callback=partial(self.service_input_image, i),
+                    port=p)
             if not sim:
                 player.create_device(server)
             players.append(player)
@@ -301,7 +305,7 @@ class InitBarstStage(MoaStage, ScheduledEventLoop):
                     self.ftdi_pin_dev] + self.players:
             try:
                 if dev is not None:
-                    dev.stop_device()
+                    dev.stop_channel()
             except:
                 pass
         self.stop_thread()
@@ -548,7 +552,7 @@ class VerifyConfigStage(MoaStage):
 
     trial_log = {'trial': 0, 'odor': False, 'shock': False, 'ts': 0}
 
-    exp_classes = ListProperty(['StdTrain', 'PsdTrain', 'OdorOnly', 'NoOdor'])
+    exp_classes = ['StdTrain', 'PsdTrain', 'OdorOnly', 'NoOdor']
 
     max_t = NumericProperty(0)
 

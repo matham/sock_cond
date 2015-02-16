@@ -1,5 +1,6 @@
 #:kivy 1.9.0
 #:import moas moa.base.named_moas
+#:import VerifyConfigStage sock_cond.stages.VerifyConfigStage
 #@PydevCodeAnalysisIgnore
 
 
@@ -176,7 +177,7 @@
                 values: [] if moas.verify is None else moas.verify.groups
         Spinner:
             id: exp_type
-            values: [] if moas.verify is None else moas.verify.exp_classes
+            values: VerifyConfigStage.exp_classes
             size_hint_x: None
             width: 100
         BoxLayout:
