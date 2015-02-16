@@ -6,9 +6,11 @@
 
 <RootStage>:
     name: 'Root_stage'
+    on_finished: app.timer.set_active_slice(8)
     InitBarstStage:
         id: barst
         name: 'barst'
+        on_started: app.timer.set_active_slice(0)
     VerifyConfigStage:
         id: verify
         name: 'verify'
@@ -23,6 +25,7 @@
             repeat: -1
             id: animal_stage
             DigitalGateStage:
+                on_started: app.timer.set_active_slice(1)
                 name: 'animal_wait'
                 device: barst.next_animal_dev
                 exit_state: True
@@ -31,6 +34,7 @@
                 name: 'prehab'
                 delay: verify.prehab
                 on_started: if self.started: verify.start_trials()
+                on_started: app.timer.set_active_slice(2)
             MoaStage:
                 name: 'trial'
                 id: trial
@@ -40,9 +44,12 @@
                     on_started: if self.started: barst.set_trial_writers(trial.count)
                     on_started: if self.started: verify.trial_log['trial'] = trial.count
                     on_started: if self.started: verify.trial_log['ts'] = clock()
+                    on_started: if self.started: verify.pre_trial()
+                    on_started: app.timer.set_active_slice(3)
                 Delay:
                     on_started: if self.started: verify.set_odor(True)
                     delay: verify.trial_duration - verify.shock_duration
+                    on_started: app.timer.set_active_slice(4)
                 Delay:
                     on_started: if self.started: verify.set_shock(True)
                     delay: verify.shock_duration
@@ -51,11 +58,15 @@
                 Delay:
                     delay: verify.post_record
                     on_finished: if self.finished: barst.reset_trial_writers()
+                    on_started: app.timer.set_active_slice(5)
                 Delay:
                     delay_type: 'random'
                     min: verify.iti_min
                     max: verify.iti_max
+                    on_delay: app.timer.update_slice_time(5, self.delay)
                     on_finished: if self.finished: verify.post_trial()
+                    on_started: app.timer.set_active_slice(6)
             Delay:
                 name: 'posthab'
                 delay: verify.posthab
+                on_started: app.timer.set_active_slice(7)

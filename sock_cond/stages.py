@@ -371,7 +371,8 @@ class VerifyConfigStage(MoaStage):
 
         try:
             self.read_odors()
-            ch = App.get_running_app().simulation_devices.ids.odors.children
+            app = App.get_running_app()
+            ch = app.simulation_devices.ids.odors.children
             valve = ch[len(ch) - 1 - int(self.NO_valve[1:])]
             valve.background_down = 'dark-blue-led-on-th.png'
             valve.background_normal = 'dark-blue-led-off-th.png'
@@ -390,6 +391,19 @@ class VerifyConfigStage(MoaStage):
                     raise Exception('Protocol {} not recognized'.format(cls))
             for player in moas.barst.players:
                 player.set_state(True)
+            timer = app.timer
+            timer.range = self.prehab + self.pre_record + self.trial_duration \
+                + self.post_record + self.iti_max + self.posthab
+            elems = (
+                (0, 'Init'), (0, 'Ready'), (self.prehab, 'Pre-hab'),
+                (self.pre_record, 'Pre-record'),
+                (self.trial_duration, 'Trial'),
+                (self.post_record, 'Post-record'),
+                (self.iti_max, 'ITI'), (self.posthab, 'Post-hab'),
+                (0, 'Done'))
+            t = [sum([e[0] for e in elems[:i + 1]]) for i in range(len(elems))]
+            txt = [e[1] for e in elems]
+            timer.update_slices(t, txt)
         except Exception as e:
             App.get_running_app().device_exception(e)
             return
@@ -434,28 +448,34 @@ class VerifyConfigStage(MoaStage):
         except Exception as e:
             App.get_running_app().device_exception(e)
             return
-        self.trial_has_odor = False
         self.odor_trial_count = 0
         self.shock_trial_count = 0
 
-    def set_odor(self, state):
+    def pre_trial(self):
+        self.trial_log['shock'] = self.trial_log['odor'] = False
+
         cls = self.animal_cls[self.animal_id]
         if cls == 'NoOdor':
             return
-        if cls == 'PsdTrain':
-            if state:
-                self.trial_has_odor = has_odor = ((
-                    bool(randint(0, 1)) or
-                    self.shock_trial_count == self.num_shock_trials) and
-                    self.odor_trial_count <
-                    self.num_trials - self.num_shock_trials)
-                if not has_odor:
-                    return
-                else:
-                    self.odor_trial_count += 1
-            elif not self.trial_has_odor:
-                return
-        self.trial_log['odor'] = True
+        elif cls == 'PsdTrain':
+            self.trial_log['odor'] = has_odor = ((
+                bool(randint(0, 1)) or
+                self.shock_trial_count == self.num_shock_trials) and
+                self.odor_trial_count <
+                self.num_trials - self.num_shock_trials)
+            if has_odor:
+                self.odor_trial_count += 1
+            else:
+                self.shock_trial_count += 1
+                self.trial_log['shock'] = True
+        elif cls == 'StdTrain':
+            self.trial_log['shock'] = self.trial_log['odor'] = True
+        elif cls == 'OdorOnly':
+            self.trial_log['odor'] = True
+
+    def set_odor(self, state):
+        if not self.trial_log['odor']:
+            return
         dev = moas.barst.odor_dev
         if state:
             dev.set_state(high=[self.odor_valve, self.NO_valve])
@@ -463,15 +483,8 @@ class VerifyConfigStage(MoaStage):
             dev.set_state(low=[self.odor_valve, self.NO_valve])
 
     def set_shock(self, state):
-        cls = self.animal_cls[self.animal_id]
-        if cls == 'NoOdor' or cls == 'OdorOnly':
+        if not self.trial_log['shock']:
             return
-        if cls == 'PsdTrain':
-            if self.trial_has_odor:
-                return
-            elif state:
-                self.shock_trial_count += 1
-        self.trial_log['shock'] = True
         dev = moas.barst.ftdi_pin_dev
         if state:
             dev.set_state(high=['shocker'])
@@ -560,7 +573,6 @@ class VerifyConfigStage(MoaStage):
 
     offset_t = NumericProperty(0)
 
-    trial_has_odor = False
     odor_trial_count = 0
     shock_trial_count = 0
     _filename = ''

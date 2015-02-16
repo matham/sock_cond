@@ -23,6 +23,8 @@ class ConditioningApp(ExperimentApp):
 
     displays = ObjectProperty(None)
 
+    timer = ObjectProperty(None)
+
     def __init__(self, **kwargs):
         super(ConditioningApp, self).__init__(**kwargs)
         self.inspect = True
