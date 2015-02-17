@@ -165,9 +165,8 @@
                 width: self.texture_size[0]
             Spinner:
                 id: day
-                text: '-1'
-                values: [] if moas.verify is None else map(str, moas.verify.days)
-                value: int(self.text)
+                text: '' if moas.verify is None else moas.verify.days[0]
+                values: [] if moas.verify is None else moas.verify.days
         BoxLayout:
             spacing: 20
             Label:
@@ -179,9 +178,11 @@
                 values: [] if moas.verify is None else moas.verify.groups
         Spinner:
             id: exp_type
+            text: VerifyConfigStage.exp_classes[0]
             values: VerifyConfigStage.exp_classes
             size_hint_x: None
             width: 100
+            on_text: if moas.verify: moas.verify.curr_animal_cls = self.text
         BoxLayout:
             spacing: 20
             Label:
@@ -205,12 +206,12 @@
                 values: [] if moas.verify is None else map(str, moas.verify.animal_cls.keys())
                 value: int(self.text)
         Button:
-            valid_animal: bool(moas.verify and animal_id.value != -1 and animal_id.value in moas.verify.animal_cls and moas.verify.animal_cls[animal_id.value] == exp_type.text)
+            valid_animal: bool(moas.verify and animal_id.value != -1 and ((animal_id.value in moas.verify.animal_cls and exp_type.text in moas.verify.animal_cls[animal_id.value]) or not moas.verify.enforce_match))
             text: 'Next'
             on_parent: app.next_animal_btn = self
-            disabled: app.app_state != 'running' or not self.valid_animal or day.value == -1 or cycle.value == -1 or not group.text
+            disabled: app.app_state != 'running' or not self.valid_animal or cycle.value == -1 or not group.text
             animal_id: animal_id.value
-            day: day.value
+            day: day.text
             cycle: cycle.value
             group: group.text
     Label:

@@ -12,7 +12,8 @@ from random import randint, shuffle
 
 from moa.stage import MoaStage
 from moa.threads import ScheduledEventLoop
-from moa.utils import ConfigPropertyList, to_bool, ConfigPropertyDict
+from moa.utils import (
+    ConfigPropertyList, to_bool, ConfigPropertyDict, to_string_list)
 from moa.compat import unicode_type
 from moa.device.digital import ButtonChannel
 from moa.base import named_moas as moas
@@ -287,7 +288,7 @@ class InitBarstStage(MoaStage, ScheduledEventLoop):
         if App.get_running_app().simulate:
             return
 
-        for dev in [server, ftdi_chan, odor_dev, pin_dev] + players:
+        for dev in [odor_dev, pin_dev, ftdi_chan] + players + [server]:
             if dev is not None:
                 dev.stop_device()
 
@@ -301,8 +302,8 @@ class InitBarstStage(MoaStage, ScheduledEventLoop):
         '''Called from :class:`InitBarstStage` internal thread. It stops
         and clears the states of all the devices.
         '''
-        for dev in [self.server, self.ftdi_chan, self.odor_dev,
-                    self.ftdi_pin_dev] + self.players:
+        for dev in [self.odor_dev, self.ftdi_pin_dev, self.ftdi_chan] + \
+            self.players + [self.server]:
             try:
                 if dev is not None:
                     dev.stop_channel()
@@ -386,20 +387,21 @@ class VerifyConfigStage(MoaStage):
             for i, name in enumerate(self.odor_names):
                 ch[N - 1 - i].text = name
             clss = self.exp_classes
-            for cls in self.animal_cls.values():
+            for cls in [v for vals in self.animal_cls.values() for v in vals]:
                 if cls not in clss:
                     raise Exception('Protocol {} not recognized'.format(cls))
             for player in moas.barst.players:
                 player.set_state(True)
             timer = app.timer
+            iti_max = max(self.iti_max.values())
             timer.range = self.prehab + self.pre_record + self.trial_duration \
-                + self.post_record + self.iti_max + self.posthab
+                + self.post_record + iti_max + self.posthab
             elems = (
                 (0, 'Init'), (0, 'Ready'), (self.prehab, 'Pre-hab'),
-                (self.pre_record, 'Pre-record'),
+                (self.pre_record, ''),
                 (self.trial_duration, 'Trial'),
-                (self.post_record, 'Post-record'),
-                (self.iti_max, 'ITI'), (self.posthab, 'Post-hab'),
+                (self.post_record, ''),
+                (iti_max, 'ITI'), (self.posthab, 'Post-hab'),
                 (0, 'Done'))
             t = [sum([e[0] for e in elems[:i + 1]]) for i in range(len(elems))]
             txt = [e[1] for e in elems]
@@ -454,7 +456,7 @@ class VerifyConfigStage(MoaStage):
     def pre_trial(self):
         self.trial_log['shock'] = self.trial_log['odor'] = False
 
-        cls = self.animal_cls[self.animal_id]
+        cls = self.curr_animal_cls
         if cls == 'NoOdor':
             return
         elif cls == 'PsdTrain':
@@ -462,7 +464,7 @@ class VerifyConfigStage(MoaStage):
                 bool(randint(0, 1)) or
                 self.shock_trial_count == self.num_shock_trials) and
                 self.odor_trial_count <
-                self.num_trials - self.num_shock_trials)
+                self.num_trials['PsdTrain'] - self.num_shock_trials)
             if has_odor:
                 self.odor_trial_count += 1
             else:
@@ -500,8 +502,10 @@ class VerifyConfigStage(MoaStage):
         fd.write(val)
         fd.write('\n')
 
-    num_trials = ConfigParserProperty(
-        1, 'Trial', 'num_trials', exp_config_name, val_type=int)
+    num_trials = ConfigPropertyDict(
+        {'StdTrain': 10, 'PsdTrain': 20, 'OdorOnly': 10, 'NoOdor': 10},
+        'Trial', 'num_trials', exp_config_name, val_type=int,
+        key_type=unicode_type)
 
     num_shock_trials = ConfigParserProperty(
         1, 'Trial', 'num_shock_trials', exp_config_name, val_type=int)
@@ -531,11 +535,15 @@ class VerifyConfigStage(MoaStage):
     shock_duration = ConfigParserProperty(
         1, 'Trial', 'shock_duration', exp_config_name, val_type=float)
 
-    iti_min = ConfigParserProperty(
-        3, 'Trial', 'iti_min', exp_config_name, val_type=float)
+    iti_min = ConfigPropertyDict(
+        {'StdTrain': 50, 'PsdTrain': 106, 'OdorOnly': 50, 'NoOdor': 50},
+        'Trial', 'iti_min', exp_config_name, val_type=float,
+        key_type=unicode_type)
 
-    iti_max = ConfigParserProperty(
-        3, 'Trial', 'iti_max', exp_config_name, val_type=float)
+    iti_max = ConfigPropertyDict(
+        {'StdTrain': 120, 'PsdTrain': 136, 'OdorOnly': 110, 'NoOdor': 110},
+        'Trial', 'iti_max', exp_config_name, val_type=float,
+        key_type=unicode_type)
 
     prehab = ConfigParserProperty(
         10, 'Trial', 'prehab', exp_config_name, val_type=float)
@@ -543,12 +551,15 @@ class VerifyConfigStage(MoaStage):
     posthab = ConfigParserProperty(
         10, 'Trial', 'posthab', exp_config_name, val_type=float)
 
+    enforce_match = ConfigParserProperty(
+        True, 'Experiment', 'enforce_match', exp_config_name, val_type=to_bool)
+
     animal_cls = ConfigPropertyDict(
         {10: 'StdTrain'}, 'Animal', 'animal_cls', exp_config_name,
-        val_type=unicode_type, key_type=int)
+        val_type=partial(to_string_list, str), key_type=int)
 
     days = ConfigPropertyList(
-        0, 'Animal', 'days', exp_config_name, val_type=int)
+        'hab', 'Animal', 'days', exp_config_name, val_type=str)
 
     cycles = ConfigPropertyList(
         0, 'Animal', 'cycles', exp_config_name, val_type=int)
@@ -572,6 +583,8 @@ class VerifyConfigStage(MoaStage):
     start_t = NumericProperty(0)
 
     offset_t = NumericProperty(0)
+
+    curr_animal_cls = StringProperty(exp_classes[0])
 
     odor_trial_count = 0
     shock_trial_count = 0

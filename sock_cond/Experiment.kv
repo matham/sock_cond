@@ -29,7 +29,7 @@
                 name: 'animal_wait'
                 device: barst.next_animal_dev
                 exit_state: True
-                on_finished: if self.finished and not self.stopped: barst.create_writers(verify.video_filename, verify.num_trials)
+                on_finished: if self.finished and not self.stopped: barst.create_writers(verify.video_filename, verify.num_trials[verify.curr_animal_cls])
             Delay:
                 name: 'prehab'
                 delay: verify.prehab
@@ -38,7 +38,7 @@
             MoaStage:
                 name: 'trial'
                 id: trial
-                repeat: verify.num_trials
+                repeat: verify.num_trials[verify.curr_animal_cls]
                 Delay:
                     delay: verify.pre_record
                     on_started: if self.started: barst.set_trial_writers(trial.count)
@@ -61,8 +61,8 @@
                     on_started: app.timer.set_active_slice(5)
                 Delay:
                     delay_type: 'random'
-                    min: verify.iti_min
-                    max: verify.iti_max
+                    min: verify.iti_min[verify.curr_animal_cls]
+                    max: verify.iti_max[verify.curr_animal_cls]
                     on_delay: app.timer.update_slice_time(5, self.delay)
                     on_finished: if self.finished: verify.post_trial()
                     on_started: app.timer.set_active_slice(6)
