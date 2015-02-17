@@ -398,9 +398,9 @@ class VerifyConfigStage(MoaStage):
                 + self.post_record + iti_max + self.posthab
             elems = (
                 (0, 'Init'), (0, 'Ready'), (self.prehab, 'Pre-hab'),
-                (self.pre_record, ''),
+                (self.pre_record, 'Pre'),
                 (self.trial_duration, 'Trial'),
-                (self.post_record, ''),
+                (self.post_record, 'Post'),
                 (iti_max, 'ITI'), (self.posthab, 'Post-hab'),
                 (0, 'Done'))
             t = [sum([e[0] for e in elems[:i + 1]]) for i in range(len(elems))]
@@ -455,6 +455,7 @@ class VerifyConfigStage(MoaStage):
 
     def pre_trial(self):
         self.trial_log['shock'] = self.trial_log['odor'] = False
+        App.get_running_app().timer.slices[4].text = 'Trial ({})'.format(moas.trial.count)
 
         cls = self.curr_animal_cls
         if cls == 'NoOdor':

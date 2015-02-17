@@ -154,10 +154,13 @@
     GridLayout:
         rows: 2
         size_hint_x: None
-        width: 500
+        width: self.minimum_width
         padding: [5]
         spacing: [5]
-        BoxLayout:
+        GridLayout:
+            rows: 1
+            size_hint_x: None
+            width: self.minimum_width
             spacing: 20
             Label:
                 text: 'Day:'
@@ -167,7 +170,12 @@
                 id: day
                 text: '' if moas.verify is None else moas.verify.days[0]
                 values: [] if moas.verify is None else moas.verify.days
-        BoxLayout:
+                size_hint_x: None
+                width: max(self.texture_size[0], 80)
+        GridLayout:
+            rows: 1
+            size_hint_x: None
+            width: self.minimum_width
             spacing: 20
             Label:
                 text: 'Group:'
@@ -176,14 +184,19 @@
             Spinner:
                 id: group
                 values: [] if moas.verify is None else moas.verify.groups
+                size_hint_x: None
+                width: max(self.texture_size[0], 80)
         Spinner:
             id: exp_type
             text: VerifyConfigStage.exp_classes[0]
             values: VerifyConfigStage.exp_classes
             size_hint_x: None
-            width: 100
+            width: 140
             on_text: if moas.verify: moas.verify.curr_animal_cls = self.text
-        BoxLayout:
+        GridLayout:
+            rows: 1
+            size_hint_x: None
+            width: self.minimum_width
             spacing: 20
             Label:
                 text: 'Cycle:'
@@ -194,7 +207,12 @@
                 text: '-1'
                 values: [] if moas.verify is None else map(str, moas.verify.cycles)
                 value: int(self.text)
-        BoxLayout:
+                size_hint_x: None
+                width: max(self.texture_size[0], 80)
+        GridLayout:
+            rows: 1
+            size_hint_x: None
+            width: self.minimum_width
             spacing: 20
             Label:
                 text: 'Animal:'
@@ -205,7 +223,11 @@
                 text: '-1'
                 values: [] if moas.verify is None else map(str, moas.verify.animal_cls.keys())
                 value: int(self.text)
+                size_hint_x: None
+                width: max(self.texture_size[0], 80)
         Button:
+            size_hint_x: None
+            width: 80
             valid_animal: bool(moas.verify and animal_id.value != -1 and ((animal_id.value in moas.verify.animal_cls and exp_type.text in moas.verify.animal_cls[animal_id.value]) or not moas.verify.enforce_match))
             text: 'Next'
             on_parent: app.next_animal_btn = self
