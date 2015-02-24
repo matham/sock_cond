@@ -48,15 +48,6 @@ class FTDIOdorsBase(object):
         super(FTDIOdorsBase, self).__init__(
             attr_map=attr_map, direction='o', **kwargs)
 
-    num_boards = ConfigPropertyList(1, 'FTDI_odor', 'num_boards',
-                                    device_config_name, val_type=int)
-    '''The number of valve boards connected to the FTDI device.
-
-    Each board controls 8 valves. Defaults to 2.
-    '''
-
-    idx = NumericProperty(0)
-
 
 class FTDIOdorsSim(FTDIOdorsBase, ButtonPort):
     '''Device used when simulating the odor devices.

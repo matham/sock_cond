@@ -4,13 +4,14 @@
 #:import clock time.clock
 
 
-<RootStage>:
+<RootStage@MoaStage>:
     name: 'Root_stage'
-    on_finished: app.timer.set_active_slice(8)
+    on_finished: app.timer.set_active_slice('Done')
+    on_finished: if self.finished: barst.stop_devices()
     InitBarstStage:
         id: barst
         name: 'barst'
-        on_started: app.timer.set_active_slice(0)
+        on_started: app.timer.set_active_slice('Init')
     VerifyConfigStage:
         id: verify
         name: 'verify'
@@ -25,7 +26,7 @@
             repeat: -1
             id: animal_stage
             DigitalGateStage:
-                on_started: app.timer.set_active_slice(1)
+                on_started: app.timer.set_active_slice('Ready')
                 name: 'animal_wait'
                 device: barst.next_animal_dev
                 exit_state: True
@@ -34,22 +35,23 @@
                 name: 'prehab'
                 delay: verify.prehab
                 on_started: if self.started: verify.start_trials()
-                on_started: app.timer.set_active_slice(2)
+                on_started: app.timer.set_active_slice('Prehab')
             MoaStage:
                 name: 'trial'
                 id: trial
                 repeat: verify.num_trials[verify.curr_animal_cls]
+                on_count: app.timer.update_slice_attrs('Trial', text='Trial ({})'.format(self.count))
                 Delay:
                     delay: verify.pre_record
                     on_started: if self.started: barst.set_trial_writers(trial.count)
                     on_started: if self.started: verify.trial_log['trial'] = trial.count
                     on_started: if self.started: verify.trial_log['ts'] = clock()
                     on_started: if self.started: verify.pre_trial()
-                    on_started: app.timer.set_active_slice(3)
+                    on_started: app.timer.set_active_slice('Pre')
                 Delay:
                     on_started: if self.started: verify.set_odor(True)
                     delay: verify.trial_duration - verify.shock_duration
-                    on_started: app.timer.set_active_slice(4)
+                    on_started: app.timer.set_active_slice('Trial')
                 Delay:
                     on_started: if self.started: verify.set_shock(True)
                     delay: verify.shock_duration
@@ -58,15 +60,15 @@
                 Delay:
                     delay: verify.post_record
                     on_finished: if self.finished: barst.reset_trial_writers()
-                    on_started: app.timer.set_active_slice(5)
+                    on_started: app.timer.set_active_slice('Post')
                 Delay:
                     delay_type: 'random'
                     min: verify.iti_min[verify.curr_animal_cls]
                     max: verify.iti_max[verify.curr_animal_cls]
-                    on_delay: app.timer.update_slice_time(5, self.delay)
+                    on_delay: app.timer.update_slice_attrs('ITI', duration=self.delay)
                     on_finished: if self.finished: verify.post_trial()
-                    on_started: app.timer.set_active_slice(6)
+                    on_started: app.timer.set_active_slice('ITI')
             Delay:
                 name: 'posthab'
                 delay: verify.posthab
-                on_started: app.timer.set_active_slice(7)
+                on_started: app.timer.set_active_slice('Posthab')

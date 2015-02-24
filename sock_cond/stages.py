@@ -44,24 +44,6 @@ def verify_valve_name(val):
     return unicode_type(val)
 
 
-class RootStage(MoaStage):
-    '''The root stage of the experiment. This stage contains all the other
-    experiment stages.
-    '''
-
-    def on_finished(self, *largs, **kwargs):
-        '''Executed after the root stage and all sub-stages finished. It stops
-        all the devices.
-        '''
-        if self.finished:
-            App.get_running_app().app_state = 'clear'
-            moas.barst.stop_devices()
-            fd = moas.verify._fd
-            if fd is not None:
-                fd.close()
-                moas.verify._fd = None
-
-
 class InitBarstStage(MoaStage, ScheduledEventLoop):
     '''The stage that creates and initializes all the Barst devices (or
     simulation devices if :attr:`ExperimentApp.simulate`).
@@ -226,7 +208,7 @@ class InitBarstStage(MoaStage, ScheduledEventLoop):
             players.append(player)
         self.players = players
         self.writers = [None, ] * len(players)
-        displays = app.displays
+        displays = app.root.ids.displays
         displays.clear_widgets()
         self.displays = [FFImage() for _ in range(len(players))]
         for display in self.displays:
@@ -282,10 +264,16 @@ class InitBarstStage(MoaStage, ScheduledEventLoop):
                 writer.add_frame()
         self.writers = [None, ] * len(self.players)
 
+        fd = moas.verify._fd
+        if fd is not None:
+            fd.close()
+            moas.verify._fd = None
+
         unschedule(self.exception_callback)
         self.clear_events()
         self.stop_thread(join=True)
         if App.get_running_app().simulate:
+            App.get_running_app().app_state = 'clear'
             return
 
         for dev in [odor_dev, pin_dev, ftdi_chan] + players + [server]:
@@ -393,19 +381,16 @@ class VerifyConfigStage(MoaStage):
             for player in moas.barst.players:
                 player.set_state(True)
             timer = app.timer
-            iti_max = max(self.iti_max.values())
-            timer.range = self.prehab + self.pre_record + self.trial_duration \
-                + self.post_record + iti_max + self.posthab
+            timer.clear_slices()
             elems = (
-                (0, 'Init'), (0, 'Ready'), (self.prehab, 'Pre-hab'),
+                (0, 'Init'), (self.prehab, 'Prehab'),
                 (self.pre_record, 'Pre'),
                 (self.trial_duration, 'Trial'),
                 (self.post_record, 'Post'),
-                (iti_max, 'ITI'), (self.posthab, 'Post-hab'),
-                (0, 'Done'))
-            t = [sum([e[0] for e in elems[:i + 1]]) for i in range(len(elems))]
-            txt = [e[1] for e in elems]
-            timer.update_slices(t, txt)
+                (self.iti_max, 'ITI'), (self.posthab, 'Posthab'),)
+            for t, name in elems:
+                timer.add_slice(name=name, duration=t)
+            timer.smear_slices()
         except Exception as e:
             App.get_running_app().device_exception(e)
             return

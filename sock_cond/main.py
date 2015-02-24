@@ -13,31 +13,20 @@ from kivy.properties import ObjectProperty
 from kivy.resources import resource_add_path
 from kivy.lang import Builder
 
-from sock_cond.graphics import MainView
-from sock_cond.stages import RootStage
+import sock_cond.stages
 
 
 class ConditioningApp(ExperimentApp):
     '''The app which runs the experiment.
     '''
 
-    displays = ObjectProperty(None)
-
     timer = ObjectProperty(None)
 
     def __init__(self, **kwargs):
         super(ConditioningApp, self).__init__(**kwargs)
-        self.inspect = True
         resource_add_path(join(dirname(dirname(__file__)), 'data'))
         Builder.load_file(join(dirname(__file__), 'Experiment.kv'))
         Builder.load_file(join(dirname(__file__), 'display.kv'))
-
-    def build(self):
-        return super(ConditioningApp, self).build(root=MainView())
-
-    def start_stage(self, restart=False):
-        return super(ConditioningApp, self).start_stage(
-            RootStage, restart=restart)
 
 run_app = partial(run_cpl_app, ConditioningApp)
 
