@@ -40,7 +40,8 @@
                 name: 'trial'
                 id: trial
                 repeat: verify.num_trials[verify.curr_animal_cls]
-                on_count: app.timer.update_slice_attrs('Trial', text='Trial ({})'.format(self.count))
+                on_count: app.timer.update_slice_attrs('Trial', text='Trial ({})'.format(self.count + 1))
+                on_started: app.timer.update_slice_attrs('Trial', text='Trial ({})'.format(self.count + 1))
                 Delay:
                     delay: verify.pre_record
                     on_started: if self.started: barst.set_trial_writers(trial.count)

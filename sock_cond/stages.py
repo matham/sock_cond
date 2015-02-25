@@ -387,7 +387,7 @@ class VerifyConfigStage(MoaStage):
                 (self.pre_record, 'Pre'),
                 (self.trial_duration, 'Trial'),
                 (self.post_record, 'Post'),
-                (self.iti_max, 'ITI'), (self.posthab, 'Posthab'),)
+                (max(self.iti_max.values()), 'ITI'), (self.posthab, 'Posthab'),)
             for t, name in elems:
                 timer.add_slice(name=name, duration=t)
             timer.smear_slices()
@@ -398,7 +398,7 @@ class VerifyConfigStage(MoaStage):
         return True
 
     def read_odors(self):
-        N = 8 * moas.barst.odor_dev.num_boards[0]
+        N = 8 * moas.barst.num_boards[0]
         odor_name = ['p{}'.format(i) for i in range(N)]
 
         # now read the odor list
@@ -440,7 +440,6 @@ class VerifyConfigStage(MoaStage):
 
     def pre_trial(self):
         self.trial_log['shock'] = self.trial_log['odor'] = False
-        App.get_running_app().timer.slices[4].text = 'Trial ({})'.format(moas.trial.count)
 
         cls = self.curr_animal_cls
         if cls == 'NoOdor':

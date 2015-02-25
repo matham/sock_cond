@@ -88,7 +88,7 @@
             Spinner:
                 id: day
                 text: '' if moas.verify is None else moas.verify.days[0]
-                values: [] if moas.verify is None else moas.verify.days
+                values: [] if moas.verify is None else sorted(moas.verify.days)
                 size_hint_x: None
                 width: max(self.texture_size[0], 80)
         GridLayout:
@@ -102,13 +102,13 @@
                 width: self.texture_size[0]
             Spinner:
                 id: group
-                values: [] if moas.verify is None else moas.verify.groups
+                values: [] if moas.verify is None else sorted(moas.verify.groups)
                 size_hint_x: None
                 width: max(self.texture_size[0], 80)
         Spinner:
             id: exp_type
             text: VerifyConfigStage.exp_classes[0]
-            values: VerifyConfigStage.exp_classes
+            values: sorted(VerifyConfigStage.exp_classes)
             size_hint_x: None
             width: 140
             on_text: if moas.verify: moas.verify.curr_animal_cls = self.text
@@ -124,7 +124,7 @@
             Spinner:
                 id: cycle
                 text: '-1'
-                values: [] if moas.verify is None else map(str, moas.verify.cycles)
+                values: [] if moas.verify is None else map(str, sorted(moas.verify.cycles))
                 value: int(self.text)
                 size_hint_x: None
                 width: max(self.texture_size[0], 80)
@@ -140,7 +140,7 @@
             Spinner:
                 id: animal_id
                 text: '-1'
-                values: [] if moas.verify is None else map(str, moas.verify.animal_cls.keys())
+                values: [] if moas.verify is None else map(str, sorted(moas.verify.animal_cls.keys()))
                 value: int(self.text)
                 size_hint_x: None
                 width: max(self.texture_size[0], 80)
