@@ -7,7 +7,7 @@ __all__ = ('ConditioningApp', 'run_app')
 from functools import partial
 from os.path import join, dirname
 
-from cplcom.app import ExperimentApp, run_app as run_cpl_app
+from cplcom.moa.app import ExperimentApp, run_app as run_cpl_app
 
 from kivy.properties import ObjectProperty
 from kivy.resources import resource_add_path
